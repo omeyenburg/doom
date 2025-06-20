@@ -89,6 +89,8 @@ int		doPointerWarp = POINTER_WARP_COUNTDOWN;
 // to use ....
 static int	multiply=1;
 
+// Palette
+static uint8_t truecolor_palette[256][3];
 
 //
 //  Translates the key currently in X_event
@@ -373,6 +375,19 @@ void I_FinishUpdate (void)
     
     }
 
+    uint8_t *dst = (uint8_t *) image->data;
+
+    for (int y = 0; y < SCREENHEIGHT; y++) {
+	for (int x = 0; x < SCREENWIDTH; x++) {
+	    int idx = screens[0][y * SCREENWIDTH + x];
+	    dst[0] = truecolor_palette[idx][2];
+	    dst[1] = truecolor_palette[idx][1];
+	    dst[2] = truecolor_palette[idx][0];
+	    dst[3] = 255;
+	    dst += 4;
+	}
+    }
+
     // scales the screen size before blitting it
     if (multiply == 2)
     {
@@ -531,57 +546,15 @@ void I_ReadScreen (byte* scr)
 
 
 //
-// Palette stuff.
-//
-static XColor	colors[256];
-
-void UploadNewPalette(Colormap cmap, byte *palette)
-{
-
-    register int	i;
-    register int	c;
-    static boolean	firstcall = true;
-
-#ifdef __cplusplus
-    if (X_visualinfo.c_class == PseudoColor && X_visualinfo.depth == 8)
-#else
-    if (X_visualinfo.class == PseudoColor && X_visualinfo.depth == 8)
-#endif
-	{
-	    // initialize the colormap
-	    if (firstcall)
-	    {
-		firstcall = false;
-		for (i=0 ; i<256 ; i++)
-		{
-		    colors[i].pixel = i;
-		    colors[i].flags = DoRed|DoGreen|DoBlue;
-		}
-	    }
-
-	    // set the X colormap entries
-	    for (i=0 ; i<256 ; i++)
-	    {
-		c = gammatable[usegamma][*palette++];
-		colors[i].red = (c<<8) + c;
-		c = gammatable[usegamma][*palette++];
-		colors[i].green = (c<<8) + c;
-		c = gammatable[usegamma][*palette++];
-		colors[i].blue = (c<<8) + c;
-	    }
-
-	    // store the colors to the current colormap
-	    XStoreColors(X_display, cmap, colors, 256);
-
-	}
-}
-
-//
 // I_SetPalette
 //
 void I_SetPalette (byte* palette)
 {
-    UploadNewPalette(X_cmap, palette);
+    for (int i = 0; i < 256; i++) {
+        truecolor_palette[i][0] = gammatable[usegamma][*palette++];
+        truecolor_palette[i][1] = gammatable[usegamma][*palette++];
+        truecolor_palette[i][2] = gammatable[usegamma][*palette++];
+    }
 }
 
 
@@ -767,8 +740,8 @@ void I_InitGraphics(void)
     }
 
     // use the default visual 
-    X_screen = DefaultScreen(X_display);
-    if (!XMatchVisualInfo(X_display, X_screen, 8, PseudoColor, &X_visualinfo))
+    // X_screen = DefaultScreen(X_display);
+    if (!XMatchVisualInfo(X_display, X_screen, 24, TrueColor, &X_visualinfo))
 	I_Error("xdoom currently only supports 256-color PseudoColor screens");
     X_visual = X_visualinfo.visual;
 
@@ -792,7 +765,8 @@ void I_InitGraphics(void)
 
     // create the colormap
     X_cmap = XCreateColormap(X_display, RootWindow(X_display,
-						   X_screen), X_visual, AllocAll);
+						   X_screen), X_visual, AllocNone);
+    // X_cmap = DefaultColormap(X_display, X_screen);
 
     // setup attributes for main window
     attribmask = CWEventMask | CWColormap | CWBorderPixel;
@@ -811,7 +785,7 @@ void I_InitGraphics(void)
 					x, y,
 					X_width, X_height,
 					0, // borderwidth
-					8, // depth
+					X_visualinfo.depth,
 					InputOutput,
 					X_visual,
 					attribmask,
@@ -858,7 +832,7 @@ void I_InitGraphics(void)
 	// create the image
 	image = XShmCreateImage(	X_display,
 					X_visual,
-					8,
+					X_visualinfo.depth,
 					ZPixmap,
 					0,
 					&X_shminfo,
@@ -896,21 +870,23 @@ void I_InitGraphics(void)
     else
     {
 	image = XCreateImage(	X_display,
-    				X_visual,
-    				8,
+    				X_visualinfo.visual,
+    				X_visualinfo.depth,
     				ZPixmap,
     				0,
-    				(char*)malloc(X_width * X_height),
+    				(char*)malloc(X_width * X_height * 4),
     				X_width, X_height,
-    				8,
-    				X_width );
+				32,
+    				X_width * 4);
 
     }
 
-    if (multiply == 1)
-	screens[0] = (unsigned char *) (image->data);
-    else
-	screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
+    if (!image) {
+	perror("XCreateImage");
+	I_Error("XCreateImage failed");
+    }
+
+    screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
 
 }
 
