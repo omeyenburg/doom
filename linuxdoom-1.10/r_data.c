@@ -643,9 +643,9 @@ void R_InitColormaps (void)
     colormaps = Z_Malloc (length, PU_STATIC, 0); 
 
     // alignes memory chunk on 256 byte block start
-    lighttable_t* aligned_colormaps = (byte *)(((uintptr_t)colormaps + 255) & ~0xFF);
+    colormaps = (byte *)(((uintptr_t)colormaps + 255) & ~0xFF);
 
-    W_ReadLump (lump,aligned_colormaps); 
+    W_ReadLump (lump,colormaps);
 }
 
 
