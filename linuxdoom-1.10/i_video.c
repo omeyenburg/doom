@@ -599,6 +599,18 @@ void I_InitGraphics(void)
     if (M_CheckParm("-4"))
 	multiply = 4;
 
+    if (M_CheckParm("-5"))
+	multiply = 5;
+
+    if (M_CheckParm("-6"))
+	multiply = 6;
+
+    if (M_CheckParm("-7"))
+	multiply = 7;
+
+    if (M_CheckParm("-8"))
+	multiply = 8;
+
     X_width = SCREENWIDTH * multiply;
     X_height = SCREENHEIGHT * multiply;
 
