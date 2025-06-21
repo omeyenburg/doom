@@ -773,7 +773,7 @@ void I_InitGraphics(void)
     attribs.event_mask =
 	KeyPressMask
 	| KeyReleaseMask
-	// | PointerMotionMask | ButtonPressMask | ButtonReleaseMask
+	| PointerMotionMask | ButtonPressMask | ButtonReleaseMask
 	| ExposureMask;
 
     attribs.colormap = X_cmap;
