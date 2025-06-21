@@ -400,6 +400,11 @@ grabdata
 	//  }
     }
 
+    free(doom1wad);
+    free(doom2wad);
+    free(doom2fwad);
+    free(doomuwad);
+    free(doomwad);
 }
 
 static struct timeval		last={0,0};
