@@ -563,6 +563,7 @@ void D_AddFile (char *file)
 void IdentifyVersion (void)
 {
 
+    char*	doomiwad;
     char*	doom1wad;
     char*	doomwad;
     char*	doomuwad;
@@ -578,6 +579,18 @@ void IdentifyVersion (void)
     doomwaddir = getenv("DOOMWADDIR");
     if (!doomwaddir)
 	doomwaddir = ".";
+
+    // IWAD.
+    doomiwad = malloc(256);
+    int iwad = M_CheckParm ("-iwad");
+    if (iwad)
+    {
+	while (++iwad != myargc && myargv[iwad][0] != '-')
+	    snprintf(doomiwad + 2, 253, "%s", myargv[iwad]);
+	doomiwad[0] = '.';
+	doomiwad[1] = '/';
+	doomiwad[255] = '\0';
+    }
 
     // Commercial.
     doom2wad = malloc(strlen(doomwaddir)+1+9+1);
@@ -603,7 +616,6 @@ void IdentifyVersion (void)
     tntwad = malloc(strlen(doomwaddir)+1+9+1);
     sprintf(tntwad, "%s/tnt.wad", doomwaddir);
 
-
     // French stuff.
     doom2fwad = malloc(strlen(doomwaddir)+1+10+1);
     sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
@@ -614,7 +626,12 @@ void IdentifyVersion (void)
     sprintf(basedefault, "%s/.doomrc", home);
 #endif
 
-    if (M_CheckParm ("-shdev"))
+    if ( !access (doomiwad,R_OK) )
+    {
+	gamemode = registered;
+	D_AddFile(doomiwad);
+    }
+    else if (M_CheckParm ("-shdev"))
     {
 	gamemode = shareware;
 	devparm = true;
