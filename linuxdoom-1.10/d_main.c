@@ -25,6 +25,7 @@
 //-----------------------------------------------------------------------------
 
 
+#include <stddef.h>
 static const char rcsid[] = "$Id: d_main.c,v 1.8 1997/02/03 22:45:09 b1 Exp $";
 
 #define	BGCOLOR		7
@@ -581,44 +582,88 @@ void IdentifyVersion (void)
 	doomwaddir = ".";
 
     // IWAD.
-    doomiwad = malloc(256);
     int iwad = M_CheckParm ("-iwad");
-    if (iwad)
-    {
-	while (++iwad != myargc && myargv[iwad][0] != '-')
-	    snprintf(doomiwad + 2, 253, "%s", myargv[iwad]);
-	doomiwad[0] = '.';
-	doomiwad[1] = '/';
-	doomiwad[255] = '\0';
+    if (iwad && ++iwad != myargc && myargv[iwad][0] != '-') {
+	doomiwad = malloc(256);
+	if (myargv[iwad][0] == '/') {
+	    snprintf(doomiwad, 256, "%s", myargv[iwad]);
+	} else {
+	    doomiwad[0] = '.';
+	    doomiwad[1] = '/';
+	    snprintf(doomiwad + 2, 254, "%s", myargv[iwad]);
+	}
+
+	char* name = doomiwad;
+	for (char* i = doomiwad; *i != '\0'; i++) {
+	    if (*i == '/')
+		name = i + 1;
+	}
+
+	size_t len = strlen(doomiwad) + 1;
+
+	doom2wad = malloc(len);
+	doomuwad = malloc(len);
+	doomwad = malloc(len);
+	doom1wad = malloc(len);
+	plutoniawad = malloc(len);
+	tntwad = malloc(len);
+	doom2fwad = malloc(len);
+
+	if (strcmp(name, "doom2.wad") == 0) {
+	    // Commercial.
+	    memcpy(doom2wad, doomiwad, len);
+	} else if (strcmp(name, "doomu.wad") == 0) {
+	    // Retail.
+	    memcpy(doomuwad, doomiwad, len);
+	} else if (strcmp(name, "doom.wad") == 0) {
+	    printf("we play doom\n");
+	    // Registered.
+	    memcpy(doomwad, doomiwad, len);
+	} else if (strcmp(name, "doom1.wad") == 0) {
+	    // Shareware.
+	    memcpy(doom1wad, doomiwad, len);
+	} else if (strcmp(name, "plutonia.wad") == 0) {
+	    // Commercial.
+	    memcpy(plutoniawad, doomiwad, len);
+	} else if (strcmp(name, "tnt.wad") == 0) {
+	    // Commercial.
+	    memcpy(tntwad, doomiwad, len);
+	} else if (strcmp(name, "doom2f.wad") == 0) {
+	    // French stuff.
+	    memcpy(doom2fwad, doomiwad, len);
+	} else {
+	    printf("n: %s\n", name);
+	    I_Error("Unknown iwad provided.");
+	}
+    } else {
+	// Commercial.
+	doom2wad = malloc(strlen(doomwaddir)+1+9+1);
+	sprintf(doom2wad, "%s/doom2.wad", doomwaddir);
+
+	// Retail.
+	doomuwad = malloc(strlen(doomwaddir)+1+9+1);
+	sprintf(doomuwad, "%s/doomu.wad", doomwaddir);
+	
+	// Registered.
+	doomwad = malloc(strlen(doomwaddir)+1+8+1);
+	sprintf(doomwad, "%s/doom.wad", doomwaddir);
+	
+	// Shareware.
+	doom1wad = malloc(strlen(doomwaddir)+1+9+1);
+	sprintf(doom1wad, "%s/doom1.wad", doomwaddir);
+
+	// Commercial.
+	plutoniawad = malloc(strlen(doomwaddir)+1+/*9*/12+1);
+	sprintf(plutoniawad, "%s/plutonia.wad", doomwaddir);
+
+	// Commercial.
+	tntwad = malloc(strlen(doomwaddir)+1+9+1);
+	sprintf(tntwad, "%s/tnt.wad", doomwaddir);
+
+	// French stuff.
+	doom2fwad = malloc(strlen(doomwaddir)+1+10+1);
+	sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
     }
-
-    // Commercial.
-    doom2wad = malloc(strlen(doomwaddir)+1+9+1);
-    sprintf(doom2wad, "%s/doom2.wad", doomwaddir);
-
-    // Retail.
-    doomuwad = malloc(strlen(doomwaddir)+1+9+1);
-    sprintf(doomuwad, "%s/doomu.wad", doomwaddir);
-    
-    // Registered.
-    doomwad = malloc(strlen(doomwaddir)+1+8+1);
-    sprintf(doomwad, "%s/doom.wad", doomwaddir);
-    
-    // Shareware.
-    doom1wad = malloc(strlen(doomwaddir)+1+9+1);
-    sprintf(doom1wad, "%s/doom1.wad", doomwaddir);
-
-     // Bug, dear Shawn.
-    // Insufficient malloc, caused spurious realloc errors.
-    plutoniawad = malloc(strlen(doomwaddir)+1+/*9*/12+1);
-    sprintf(plutoniawad, "%s/plutonia.wad", doomwaddir);
-
-    tntwad = malloc(strlen(doomwaddir)+1+9+1);
-    sprintf(tntwad, "%s/tnt.wad", doomwaddir);
-
-    // French stuff.
-    doom2fwad = malloc(strlen(doomwaddir)+1+10+1);
-    sprintf(doom2fwad, "%s/doom2f.wad", doomwaddir);
 
     home = getenv("HOME");
     if (!home)
@@ -626,12 +671,7 @@ void IdentifyVersion (void)
     sprintf(basedefault, "%s/.doomrc", home);
 #endif
 
-    if ( !access (doomiwad,R_OK) )
-    {
-	gamemode = registered;
-	D_AddFile(doomiwad);
-    }
-    else if (M_CheckParm ("-shdev"))
+    if (M_CheckParm ("-shdev"))
     {
 	gamemode = shareware;
 	devparm = true;
@@ -678,6 +718,7 @@ void IdentifyVersion (void)
     else if ( !access (doom2wad,R_OK) )
     {
 	gamemode = commercial;
+	printf("open %s\n", doom2wad);
 	D_AddFile (doom2wad);
     }
     else if ( !access (plutoniawad, R_OK ) )
@@ -698,6 +739,7 @@ void IdentifyVersion (void)
     else if ( !access (doomwad,R_OK) )
     {
       gamemode = registered;
+      printf("its %s\n", doomwad);
       D_AddFile (doomwad);
     }
     else if ( !access (doom1wad,R_OK) )
