@@ -1,6 +1,7 @@
-# WADs
+# Doom files
 *.wad
 *.deh
+*.dsg
 
 # Build output
 linux/
