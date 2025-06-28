@@ -396,6 +396,7 @@ addsfx
 //
 void I_SetChannels()
 {
+#ifndef SNDDISABLED
   // Init internal lookups (raw data, mixing buffer, channels).
   // This function sets up internal lookups used during
   //  the mixing process. 
@@ -422,26 +423,31 @@ void I_SetChannels()
   for (i=0 ; i<128 ; i++)
     for (j=0 ; j<256 ; j++)
       vol_lookup[i*256+j] = (i*(j-128)*256)/127;
+#endif
 }	
 
  
 void I_SetSfxVolume(int volume)
 {
+#ifndef SNDDISABLED
   // Identical to DOS.
   // Basically, this should propagate
   //  the menu/config file setting
   //  to the state variable used in
   //  the mixing.
   snd_SfxVolume = volume;
+#endif
 }
 
 // MUSIC API - dummy. Some code from DOS version.
 void I_SetMusicVolume(int volume)
 {
+#ifndef SNDDISABLED
   // Internal state variable.
   snd_MusicVolume = volume;
   // Now set volume on output device.
   // Whatever( snd_MusciVolume );
+#endif
 }
 
 
@@ -476,6 +482,7 @@ I_StartSound
   int		pitch,
   int		priority )
 {
+#ifndef SNDDISABLED
 
   // UNUSED
   priority = 0;
@@ -499,12 +506,14 @@ I_StartSound
     
     return id;
 #endif
+#endif
 }
 
 
 
 void I_StopSound (int handle)
 {
+#ifndef SNDDISABLED
   // You need the handle returned by StartSound.
   // Would be looping all channels,
   //  tracking down the handle,
@@ -512,6 +521,7 @@ void I_StopSound (int handle)
   
   // UNUSED.
   handle = 0;
+#endif
 }
 
 
@@ -539,6 +549,7 @@ int I_SoundIsPlaying(int handle)
 //
 void I_UpdateSound( void )
 {
+#ifndef SNDDISABLED
 #ifdef SNDINTR
   // Debug. Count buffer misses with interrupt.
   static int misses = 0;
@@ -652,6 +663,7 @@ void I_UpdateSound( void )
     // Increment flag for update.
     flag++;
 #endif
+#endif
 }
 
 
@@ -666,8 +678,10 @@ void I_UpdateSound( void )
 void
 I_SubmitSound(void)
 {
+#ifndef SNDDISABLED
   // Write it to DSP device.
   write(audio_fd, mixbuffer, SAMPLECOUNT*BUFMUL);
+#endif
 }
 
 
@@ -693,6 +707,7 @@ I_UpdateSoundParams
 
 void I_ShutdownSound(void)
 {    
+#ifndef SNDDISABLED
 #ifdef SNDSERV
   if (sndserver)
   {
@@ -728,6 +743,7 @@ void I_ShutdownSound(void)
 
   // Done.
   return;
+#endif
 }
 
 
@@ -738,6 +754,7 @@ void I_ShutdownSound(void)
 void
 I_InitSound()
 { 
+#ifndef SNDDISABLED
 #ifdef SNDSERV
   char buffer[256];
   
@@ -822,6 +839,7 @@ I_InitSound()
   // Finished initialization.
   fprintf(stderr, "I_InitSound: sound module ready\n");
     
+#endif
 #endif
 }
 
